@@ -257,7 +257,7 @@ class SBHeaderProcessor(object):
             category_items = self.category_dict.get(key, [])
             self.category_dict[key] = category_items + children
 
-    def emit_swift(self):
+    def emit_swift(self, gen_base_protocol=True):
         cmakeArgs = ["-ObjC"]
         macOsVersion = float('.'.join(platform.mac_ver()[0].split('.')[:2])) # poor man's version fetch
         if macOsVersion >= 10.13:
@@ -270,7 +270,10 @@ class SBHeaderProcessor(object):
             if inclusion.depth == 1:
                 include = inclusion.include.name
                 self.emit_line('import {}'.format(name_from_path(include)))
-        self.emit_line(base_protocols)
+
+        if gen_base_protocol:
+            self.emit_line(base_protocols)
+
         cursor = translation_unit.cursor
         local_children = [child for child in cursor.get_children()
                           if child.location.file and child.location.file.name == self.file_path]
@@ -288,10 +291,10 @@ class SBHeaderProcessor(object):
         self.swift_file.close()
 
 
-def main(file_path):
+def main(file_path, gen_base_protocol):
     header_processor = SBHeaderProcessor(file_path)
-    header_processor.emit_swift()
+    header_processor.emit_swift(gen_base_protocol)
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    main(sys.argv[1], len(sys.argv) < 3)
